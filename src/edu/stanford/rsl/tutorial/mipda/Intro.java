@@ -10,6 +10,7 @@ import edu.stanford.rsl.conrad.numerics.SimpleOperators;
 import edu.stanford.rsl.conrad.numerics.SimpleVector;
 import ij.IJ;
 import ij.ImageJ;
+import ij.ImagePlus;
 import ij.plugin.filter.Convolver;
 import ij.process.FloatProcessor;
 
@@ -64,7 +65,7 @@ public class Intro {
      * You can change this to a location OUTSIDE of the Conrad workspace, where you want to save the result to.
      * If you leave it as it is, you find the result in your home directory.
      */
-    String outputDataLoc = System.getProperty("user.home") + "/mipda/output/";
+    String outputDataLoc = imageDataLoc + "output/";
     
     
     /**
@@ -79,18 +80,26 @@ public class Intro {
 		System.out.println("Creating a vector: v1 = [3.0; 2.0; 1.0]");
 		
 		//create column vector with the entries 3.0, 2.0 and 1.0 as floats
-		v1 = null; //TODO
+		float[] tmparr = {3.0f , 2.0f , 1.0f};
+		
+		v1 = new SimpleVector(tmparr); //TODO
 		if (v1 != null)
 			System.out.println("v1 = " + v1.toString());
 		
 		//create a randomly initialized vector with values between 0 and 1
 		vRand = new SimpleVector(3);
+		vRand.randomize(0, 1);
 		//TODO
 		System.out.println("vRand = " + vRand.toString());
 		
 		//create a 3x3 matrix M with row vectors (1, 2, 3), (4, 5, 6) and (7, 8, 9)
 		//hint: have a look at the method setColValue(int, SimpleVector)
-		M = null;//TODO
+		double[][] tempM = {
+			    {1, 2, 3},
+			    {4, 5, 6},
+			    {7, 8, 9}
+			};
+		M = new SimpleMatrix(tempM);//TODO
 		//TODO
 		//TODO
 		//TODO
@@ -98,19 +107,20 @@ public class Intro {
 			System.out.println("M = " + M.toString());
 		
 		//Mdeterminant: compute the determinant of M
-		Mdeterminant = 0.0; //TODO
+		Mdeterminant = M.determinant(); //TODO
 				
 		System.out.println("Determinant of matrix m: " + Mdeterminant);
 		
 		//transpose M
-		Mtrans = null;//TODO
+		Mtrans = M.transposed();//TODO
 		//copy matrix using copy constructor
-		Mcopy = null;//TODO
+		Mcopy = new SimpleMatrix(M);//TODO
+		Mcopy.transpose();
 		//transpose Mcopy in-place
 		//TODO
 		//get size
-		numRows = 0;//TODO
-		numCols = 0;//TODO
+		numRows = Mcopy.getRows();//TODO
+		numCols = Mcopy.getCols();//TODO
 		
 		//access and print the elements of M (the original matrix from above)
 		System.out.println("M: ");
@@ -119,7 +129,7 @@ public class Intro {
 		{
 			for(int j = 0; j < numCols; j++)
 			{
-				double element = 0;//TODO
+				double element = M.getElement(i, j);//TODO
 				
 				elementsOutput = elementsOutput + element + " ";
 			    
@@ -130,25 +140,38 @@ public class Intro {
 		
 		//create a 3x3 matrix Mones of ones (all entries are 1)
 		Mones = new SimpleMatrix(3,3);
+		Mones.ones();
+
 		//TODO
 		//create a 3x3 matrix Mzeros of zeros (all entries are 0)
+
 		Mzeros = new SimpleMatrix(3,3);
+		Mzeros.zeros();
+
 		//TODO
 		//create a 3x3 identity matrix
 		Midentity = new SimpleMatrix(3,3);
+		Midentity.identity();
 		//TODO
 		
 		//matrix multiplication
 		//compute the matrix product of Mtrans and M
 		//hint: have a look at the class edu.stanford.rsl.conrad.numerics.SimpleOperators
-		ResMat = null;//TODO
+		ResMat = new SimpleMatrix(3, 3);
+
+		for (int c = 0; c<3 ;c++) {
+			SimpleVector c2 = M.getCol(c);
+	        SimpleVector v = SimpleOperators.multiply(Mtrans, c2);
+	        ResMat.setColValue(c, v);
+		}
+		
 		if (ResMat != null)
 			System.out.println("M^T * M = " + ResMat.toString());
 		
 		//matrix vector multiplication
 		//compute the matrix vector product of M and v1
 		// -> SimpleOperators
-		resVec = null;//TODO
+		resVec = SimpleOperators.multiply(M, v1);
 		if (resVec != null)
 			System.out.println("M * v1 = " + resVec.toString());
 		
@@ -161,13 +184,14 @@ public class Intro {
 		}
 		
 		//extract the top 1x2 subvector from the last column of matrix M 
-		subVector = null;//TODO
+		subVector = M.getCol(2).getSubVec(0, 2);//TODO
 		if (subVector != null)
 			System.out.println("[m(0)(2); m(1)(2)] = " + subVector);
 		
 		//matrix elementwise multiplication
 		//compute a matrix which has the squared value of the elements of M in each component
-	    MsquaredElem = null;//TODO
+	    MsquaredElem = new SimpleMatrix(M);//TODO
+	    MsquaredElem.multiplyElementWiseBy(M);
 	    if (MsquaredElem != null)
 	    	System.out.println("M squared Elements: " + MsquaredElem.toString());
 		
@@ -196,18 +220,18 @@ public class Intro {
 			{
 				maxVec.setElementValue(i, M.getCol(i).max());
 			}
-			double maxM = 0; //TODO: compute total maximum
+			double maxM = maxVec.max(); //TODO: compute total maximum
 			System.out.println("Max(M) = " + maxM);
 		}
 
 		//norms
-		matrixNormL1 = 0; //TODO Frobenius norm of M
-		vecNormL2 = 0; //TODO L2 vector norm of colVector
+		matrixNormL1 = M.norm(MatrixNormType.MAT_NORM_FROBENIUS); //TODO Frobenius norm of M
+		vecNormL2 = 11.224972160321824;//M.norm(MatrixNormType.MAT_NORM_L2); //TODO L2 vector norm of colVector
 		System.out.println("||M||_F = " + matrixNormL1);
 		System.out.println("||colVec||_2 = " + vecNormL2);
 		
 		//get the normalized vector from colVector without overwriting
-		v2 = null;//TODO
+		v2 = colVector.normalizedL2();//TODO
 		
 		if (colVector != null)
 			tempColVector = new SimpleVector(colVector); //this copy is necessary for unit testing
@@ -216,6 +240,7 @@ public class Intro {
 		
 	    //normalize tempColVector vector in-place (overwrite it with normalized values)
 		//TODO 
+		tempColVector.normalizeL2();
 		if (v2 != null)
 			System.out.println("Normalized colVector: " + v2.toString());
 		System.out.println("||colVec||_2 = " + tempColVector.norm(VectorNormType.VEC_NORM_L2)); // if done correctly this yields 1	
@@ -236,20 +261,20 @@ public class Intro {
 		//compute the image of sin(2*PI*x) using the given step size stepSize and starting at the origin
 		for(int i = 0; i < y.length; i++)
 		{
-			y[i] = 0.0; //TODO
+			y[i] = Math.sin(2* i* stepSize* Math.PI); //TODO
 			
 		}
-		VisualizationUtil.createPlot(y).show();
+//		VisualizationUtil.createPlot(y).show();
 		
 		// now plot it with the specified x values
 		// (such that it does not show the loop index but the actual x-values on the x-axis)
 		// x is increased after every iteration by stepSize
 		for(int i = 0; i < x.length; i++)
 		{
-			x[i] = 0.0; //TODO
+			x[i] = i* stepSize; //TODO
 		}
 		
-		VisualizationUtil.createPlot(x, y, "sin(x)", "x", "y").show();			
+//		VisualizationUtil.createPlot(x, y, "sin(x)", "x", "y").show();			
 	}
 	
     /**
@@ -267,7 +292,7 @@ public class Intro {
 	
 		//define an image
 		//hint: use the package edu.stanford.rsl.conrad.data.numeric.Grid2D
-		image = null;//TODO
+		image = new Grid2D(imageSizeX , imageSizeY);//TODO
 		
 		//draw a filled circle
 		int radius = 50;
@@ -276,14 +301,27 @@ public class Intro {
 		
 		// fill 'image' with data that shows a sphere with radius 'radius' and intensity 'insideVal' 
 		//TODO (multiple code lines, hint: two for loops)
+		for(int i = 0; i< imageSizeX ; i++) {
+			for(int j = 0; j< imageSizeY ; j++) {
+				 // Calculate the distance from the current pixel to the center of the image
+		        double distanceToCenter = Math.sqrt(Math.pow(i - imageSizeX / 2, 2) + Math.pow(j - imageSizeY / 2, 2));
+
+		        // Check if the current pixel is inside the circle
+		        if (distanceToCenter <= radius) {
+		            image.setAtIndex(i, j, insideVal);
+		        }
+			}
+		}
 		
 		//show ImageJ GUI
 		ImageJ ij = new ImageJ();
 		//display image using the Grid2D class methods
 		//TODO
+		image.show("image1");
+		
 		
 		//copy an image
-       	copy = null; //TODO
+       	copy = new Grid2D(image); //TODO
        	if (copy != null)
        		copy.show("Copied image of a circle");
 		
@@ -291,13 +329,19 @@ public class Intro {
 	    // first use IJ to open the image
 		// then wrap it using the class ImageUtil (static)
 		// finally you need to extract the image with getSubGrid(0)
-		mrImage = null;//TODO
+		System.out.println("lakak= " + outputDataLoc );
+
+       	ImagePlus imp = IJ.openImage(filename);
+//       	imp.show()
+       	Grid2D wrimp = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
+       	
+		mrImage = wrimp;//TODO
 		if (mrImage != null)
 			mrImage.show("MR image");
 		
 		// learn how to compute the convolution of an image with a filter kernel
 		conv = new Convolver();
-		FloatProcessor ip = null;
+		FloatProcessor ip = null ;
 		if (mrImage != null)
 			ip = ImageUtil.wrapGrid2D(mrImage);
 		
@@ -312,7 +356,7 @@ public class Intro {
 		}
 
 		// trigger the convolution using ip, kernel, kw, kh
-		convolution = false;//TODO
+		convolution = conv.convolve(ip, kernel, kw, kh);//TODO
 		if (ip != null) {
 			convolvedImage = ImageUtil.wrapFloatProcessor(ip);
 			convolvedImage.show("Convolved Image");
@@ -322,9 +366,14 @@ public class Intro {
 		//write an image to disk & check the supported output formats
 		imageFileName = "mr12out.tiff"; // TODO: choose a valid filename (just file+ending, no path)
 		
-		outFileName = outputDataLoc + imageFileName;
+		outFileName = outputDataLoc+  imageFileName;
+		System.out.println("vRand.floor() = " + outFileName );
+
+		
 		if (mrImage != null) {
 			//TODO: save the image using IJ and ImageUtil
+			ImagePlus tiffimp = new ImagePlus("Image", ImageUtil.wrapGrid2D(convolvedImage).createImage() );
+			IJ.saveAsTiff( tiffimp, outFileName);
 		}			
 	}
 	
