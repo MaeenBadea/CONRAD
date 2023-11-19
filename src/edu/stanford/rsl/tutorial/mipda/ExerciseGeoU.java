@@ -35,8 +35,8 @@ public class ExerciseGeoU {
 	Grid2D undistortedImage; // do not edit, member variable for the output image
 	
 	// number of lattice points
-	final int nx = 0;//TODO: define the number of lattice point: nx (Positive number and less than 20)
-	final int ny = 0;//TODO: define the number of lattice point: ny (Positive number and less than 20)
+	final int nx = 15;//TODO: define the number of lattice point: nx (Positive number and less than 20)
+	final int ny = 15;//TODO: define the number of lattice point: ny (Positive number and less than 20)
 	
 	float fx;
 	float fy;
@@ -76,7 +76,7 @@ public class ExerciseGeoU {
 		exObj.init(a,b,d);
 		
 		// TASK: go to the method doImageUndistortion(...) and complete it 
-		exObj.undistortedImage = exObj.doImageUndistortion(exObj.distortedImage);
+//		exObj.undistortedImage = exObj.doImageUndistortion(exObj.distortedImage);
 		
 		exObj.originalImage.show("Original Image");
 		exObj.distortedImage.show("Distorted Image");
@@ -105,7 +105,7 @@ public class ExerciseGeoU {
 			System.err.println("Error in doImageUndistortion(): called before initialization of members.");
 			return grid;
 		}
-		
+		System.out.println("sadfad");
 		
 		getLatticePoints(distortedImage);// There are TODOs here 
 		
@@ -142,8 +142,8 @@ public class ExerciseGeoU {
 		
 		// step size
 		// calculate the step size of the lattice points: fx and fy 
-		fx = 0; //TODO
-		fy = 0; //TODO
+		fx = imageWidth/ (nx -1 ); //TODO
+		fy = imageHeight / (ny - 1); //TODO
 		
 		// fill the distorted and undistorted lattice points 
 		// with data from the given correspondences
@@ -154,13 +154,19 @@ public class ExerciseGeoU {
 		Yd = new SimpleMatrix(ny,nx);
 		
 		for(int i = 0; i < nx; i++){
+			double x = i*fx;
 			for(int j = 0; j < ny; j++){
-
+				double y = j*fy;
 				// sample the distorted and undistorted grid points at the lattice points
 				//TODO: fill matrix Xu
+				Xu.setElementValue(i, j, x);
 				//TODO: fill matrix Yu
+				Yu.setElementValue(i, j, y);
 				//TODO: fill matrix Xd
+				Xd.setElementValue(i, j, x);
 				//TODO: fill matrix Yd
+				Yd.setElementValue(i, j, y);
+
 			}
 		}
 	}
@@ -179,10 +185,12 @@ public class ExerciseGeoU {
 		
 		// number of coefficients: numCoeff
 		// (hint: this is NOT the total number of multiplications!)
-		numCoeff = 0; //TODO
+	    numCoeff = (degree + 1) * (degree + 2) / 2; // Formula for the number of coefficients in a polynomial of degree d
 		
 		// number of correspondences: numCorresp
-		numCorresp =  0; //TODO
+		numCorresp =  Xd.getCols() * Xd.getRows(); //TODO
+		System.out.println("rowwwwwwwwwwwws " + Xd.getRows());
+
 		
 		// Printout of the used parameters
 		System.out.println("Polynom of degree: " + degree);
@@ -227,6 +235,7 @@ public class ExerciseGeoU {
 				for(int l = 0; l <= (degree-k); l++){
 					
 					// TODO: fill matrix A
+	                A.setElementValue(r, cc, Math.pow(XdVector.getElement(r), k) * Math.pow(YdVector.getElement(r), l));
 					cc++;
 					
 				}
@@ -237,12 +246,12 @@ public class ExerciseGeoU {
 	public void computeDistortionCoeff(SimpleMatrix A, SimpleVector XuVector, SimpleVector YuVector){
 		
 		// Compute the pseudo-inverse of A with the help of the SVD (class: DecompositionSVD)
-		svd = null; // TODO
-	    A_pseudoinverse = null; // TODO
+		svd = new DecompositionSVD(A); // TODO
+	    A_pseudoinverse = svd.inverse(false); // TODO
 	  
 		// Compute the distortion coefficients (solve for known corresponding undistorted points)
-		u_vec = null;// TODO
-		v_vec = null;// TODO
+		u_vec = SimpleOperators.multiply(A, XuVector);// TODO
+		v_vec = SimpleOperators.multiply(A, YuVector);// TODO
 	}
 	
 	/**
@@ -262,7 +271,7 @@ public class ExerciseGeoU {
 		for(int i = 0; i < imageWidth; i++){
 			for(int j = 0; j < imageHeight; j++){
 				
-				float val1, val2; //variables Val1 and Val2 are used for intermediate computation of xDist and yDist respectively
+				float val1=0, val2=0; //variables Val1 and Val2 are used for intermediate computation of xDist and yDist respectively
 				
 				int cc = 0;
 				
@@ -271,6 +280,9 @@ public class ExerciseGeoU {
 						
 						val1 = 0;// TODO
 						val2 = 0;// TODO
+						int monomialIndex = k * (degree + 1) + l;
+						val1 += u_vec.getElement(monomialIndex) * Math.pow(i, k) * Math.pow(j, l);
+						val2 += v_vec.getElement(monomialIndex) * Math.pow(i, k) * Math.pow(j, l);
 						
 						// TODO: fill xDist
 						// TODO: fill yDist
@@ -278,6 +290,8 @@ public class ExerciseGeoU {
 						cc++;
 					}
 				}
+				xDist.setAtIndex(i, j, val1);
+				yDist.setAtIndex(i, j, val2);
 			}
 		}
 		
@@ -286,15 +300,40 @@ public class ExerciseGeoU {
 		for(int i = 0; i < imageWidth; i++){
 			for(int j = 0; j < imageHeight; j++){
 				
+				float xx = i - xDist.getAtIndex(i, j);
+	            float yy = j - yDist.getAtIndex(i, j);
 				// hint: consider the fact that the coordinate origin is in the center of the image
-				val = 0;//TODO
+	            val = getInterpolatedValue(distortedImage,xx, yy);//TODO
 				//TODO: fill grid_out
+	            grid_out.setAtIndex(i, j, val);
 			}
 		}
 		
 		return grid_out;
 		
 	}
+	public float getInterpolatedValue(Grid2D grid, float x, float y) {
+	    int x0 = (int) x;
+	    int x1 = x0 + 1;
+	    int y0 = (int) y;
+	    int y1 = y0 + 1;
+
+	    float q11 = grid.getAtIndex(x0, y0);
+	    float q21 = grid.getAtIndex(x1, y0);
+	    float q12 = grid.getAtIndex(x0, y1);
+	    float q22 = grid.getAtIndex(x1, y1);
+
+	    float xFraction = x - x0;
+	    float yFraction = y - y0;
+
+	    float value = (1 - xFraction) * (1 - yFraction) * q11 +
+	                  xFraction * (1 - yFraction) * q21 +
+	                  (1 - xFraction) * yFraction * q12 +
+	                  xFraction * yFraction * q22;
+
+	    return value;
+	}
+
 	
 	
 	
